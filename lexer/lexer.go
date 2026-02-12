@@ -38,8 +38,8 @@ func (lex *lexer) scanToken() {
 		return
 	}
 
-	// comments
-	if ch == '/' && lex.peek() == '/' {
+	// comments: //
+	if ch == '/' && lex.peekNext() == '/' {
 		lex.skipComment()
 		return
 	}
@@ -50,13 +50,27 @@ func (lex *lexer) scanToken() {
 		return
 	}
 
+	// numbers
 	if unicode.IsDigit(rune(ch)) {
 		lex.scanNumber()
 		return
 	}
 
-	// identifier and keywords
-	if unicode.IsLetter(rune(ch)) || ch == '_' || ch == '-' {
+	// '_' can be wildcard OR start of identifier
+	if ch == '_' {
+		next := lex.peekNext()
+		// If next continues an identifier, treat as identifier start (e.g. _x, __foo)
+		if isIdentContinue(next) {
+			lex.scanIdentifier()
+		} else {
+			lex.advance()
+			lex.push(newToken(UNDER_SCORE, "_"))
+		}
+		return
+	}
+
+	// identifiers and keywords (snake_case)
+	if isIdentStart(ch) {
 		lex.scanIdentifier()
 		return
 	}
@@ -74,18 +88,42 @@ func (lex *lexer) scanToken() {
 		lex.advance()
 		lex.push(newToken(CLOSE_BRACKET, "]"))
 		return
+	case '(':
+		lex.advance()
+		lex.push(newToken(OPEN_PARENTHESIS, "("))
+		return
+	case ')':
+		lex.advance()
+		lex.push(newToken(CLOSE_PARENTHESIS, ")"))
+		return
 	case ';':
 		lex.advance()
 		lex.push(newToken(SEMI_COLON, ";"))
 		return
+	case ',':
+		lex.advance()
+		lex.push(newToken(COMMA, ","))
+		return
+	case '|':
+		lex.advance()
+		lex.push(newToken(PIPE, "|"))
+		return
+	case '-':
+		lex.advance()
+		lex.push(newToken(MINUS, "-"))
+		return
+	case '+':
+		lex.advance()
+		lex.push(newToken(PLUS, "+"))
+		return
 	}
 
-	panic(fmt.Sprintf("lexer error: unexped character '%c' at position %d", ch, lex.pos))
+	panic(fmt.Sprintf("lexer error: unexpected character '%c' at position %d (line %d)", ch, lex.pos, lex.line))
 }
 
 func (lex *lexer) scanString() {
 	start := lex.pos
-	lex.advance()
+	lex.advance() // consume opening "
 
 	for !lex.atEOF() && lex.peek() != '"' {
 		lex.advance()
@@ -109,8 +147,8 @@ func (lex *lexer) scanNumber() {
 	}
 
 	if !lex.atEOF() && lex.peek() == '.' && unicode.IsDigit(rune(lex.peekNext())) {
-		lex.advance()
-		for !lex.atEOF() && unicode.IsDigit(rune(lex.peekNext())) {
+		lex.advance() // consume '.'
+		for !lex.atEOF() && unicode.IsDigit(rune(lex.peek())) {
 			lex.advance()
 		}
 	}
@@ -121,14 +159,10 @@ func (lex *lexer) scanNumber() {
 
 func (lex *lexer) scanIdentifier() {
 	start := lex.pos
+	lex.advance()
 
-	for !lex.atEOF() {
-		ch := lex.peek()
-		if unicode.IsLetter(rune(ch)) || unicode.IsDigit(rune(ch)) || ch == '_' || ch == '-' {
-			lex.advance()
-		} else {
-			break
-		}
+	for !lex.atEOF() && isIdentContinue(lex.peek()) {
+		lex.advance()
 	}
 
 	value := lex.source[start:lex.pos]
@@ -137,6 +171,14 @@ func (lex *lexer) scanIdentifier() {
 	} else {
 		lex.push(newToken(IDENTIFIER, value))
 	}
+}
+
+func isIdentStart(ch byte) bool {
+	return unicode.IsLetter(rune(ch))
+}
+
+func isIdentContinue(ch byte) bool {
+	return unicode.IsLetter(rune(ch)) || unicode.IsDigit(rune(ch)) || ch == '_'
 }
 
 func (lex *lexer) skipWhitespace() {

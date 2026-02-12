@@ -54,5 +54,5 @@ func createTokenLookups() {
 	nud(lexer.STRING, parsePrimaryExpr)
 	nud(lexer.IDENTIFIER, parsePrimaryExpr)
 
-	stmt(lexer.GIVEN, parseVarDeclStmt)
+	stmt(lexer.LET, parseVarDeclStmt)
 }

@@ -20,7 +20,7 @@ func parseStmt(p *parser) ast.Stmt {
 func parseVarDeclStmt(p *parser) ast.Stmt {
 	var assinedValue ast.Expr
 
-	isConstant := p.advance().Kind == lexer.GIVEN
+	isConstant := p.advance().Kind == lexer.LET
 	varName := p.expectError(lexer.IDENTIFIER, "Inside variable declaration expected to find variable name").Literal
 
 	// if p.currentTokenKind() == lexer.COLON {

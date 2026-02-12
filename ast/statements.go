@@ -45,3 +45,15 @@ type VarDeclStmt struct {
 }
 
 func (n VarDeclStmt) stmt() {}
+
+type Parameter struct {
+	Name string
+}
+
+type FunctionDeclStmt struct {
+	Name       string
+	Parameters []Parameter
+	Body       []Stmt
+}
+
+func (n FunctionDeclStmt) stmt() {}
