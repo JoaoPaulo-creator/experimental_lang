@@ -78,7 +78,7 @@ func (lex *lexer) scanToken() {
 	switch ch {
 	case '=':
 		lex.advance()
-		lex.push(newToken(ASSIGNMENT, "="))
+		lex.push(newToken(FUNCTION_ASSOCIATION, "="))
 		return
 	case '[':
 		lex.advance()
@@ -115,6 +115,10 @@ func (lex *lexer) scanToken() {
 	case '+':
 		lex.advance()
 		lex.push(newToken(PLUS, "+"))
+		return
+	case '\n':
+		lex.advance()
+		lex.push(newToken(NEW_LINE, "\n"))
 		return
 	}
 
@@ -183,8 +187,8 @@ func isIdentContinue(ch byte) bool {
 
 func (lex *lexer) skipWhitespace() {
 	for !lex.atEOF() && unicode.IsSpace(rune(lex.peek())) {
-		if lex.peek() == '\n' {
-			lex.line++
+		if lex.peek() == '\t' {
+			lex.pos++
 		}
 		lex.advance()
 	}

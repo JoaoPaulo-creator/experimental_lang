@@ -30,12 +30,14 @@ const (
 	SEMI_COLON
 
 	// operators
-	ASSIGNMENT // =
-	EQ         // == (optional; lexer below doesn't emit yet)
+	FUNCTION_ASSOCIATION // =
+	EQ                   // == (optional; lexer below doesn't emit yet)
 	PLUS
 	PLUS_PLUS
 	MINUS
 	MINUS_MINUS
+
+	NEW_LINE
 
 	// patterns
 	UNDER_SCORE // wildcard _
@@ -94,8 +96,10 @@ func TokenKindString(kind Kind) string {
 	case SEMI_COLON:
 		return "semi_colon"
 
-	case ASSIGNMENT:
-		return "assignment"
+	case FUNCTION_ASSOCIATION:
+		return "function_association"
+	case NEW_LINE:
+		return "new_line"
 	case EQ:
 		return "eq"
 	case PLUS:

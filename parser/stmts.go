@@ -23,24 +23,54 @@ func parseVarDeclStmt(p *parser) ast.Stmt {
 	isConstant := p.advance().Kind == lexer.LET
 	varName := p.expectError(lexer.IDENTIFIER, "Inside variable declaration expected to find variable name").Literal
 
-	// if p.currentTokenKind() == lexer.COLON {
-	// 	p.advance() // eat the colon
-	// }
-
 	if p.currentTokenKind() != lexer.SEMI_COLON {
-		p.expect(lexer.ASSIGNMENT)
-		assinedValue = parseExpr(p, assignment)
+		p.expect(lexer.FUNCTION_ASSOCIATION)
+		assinedValue = parseExpr(p, function_association)
 	}
-
-	p.expect(lexer.SEMI_COLON)
-
-	// if isConstant && assinedValue == nil {
-	// 	panic("Cannot define constant without providing a value!")
-	// }
 
 	return ast.VarDeclStmt{
 		IsConstant:    isConstant,
 		VariableName:  varName,
 		AssignedValue: assinedValue,
 	}
+}
+
+func parseBlockStmt(p *parser) ast.Stmt {
+	p.advance()
+	body := []ast.Stmt{}
+	for p.hasTokens() && p.currentTokenKind() != lexer.NEW_LINE {
+		body = append(body, parseStmt(p))
+	}
+
+	return ast.BlockStmt{
+		Body: body,
+	}
+
+}
+
+func parseFunctionDeclStmt(p *parser) ast.Stmt {
+	p.advance()
+	fnName := p.expect(lexer.IDENTIFIER).Literal
+	fnParameters, fnBody := parseFnParamsAndBody(p)
+
+	return ast.FunctionDeclStmt{
+		Name:       fnName,
+		Parameters: fnParameters,
+		Body:       fnBody,
+	}
+}
+
+func parseFnParamsAndBody(p *parser) ([]ast.Parameter, []ast.Stmt) {
+	fnParams := make([]ast.Parameter, 0)
+	for p.hasTokens() && p.currentTokenKind() != lexer.FUNCTION_ASSOCIATION {
+		paramName := p.expect(lexer.IDENTIFIER).Literal
+		fnParams = append(fnParams, ast.Parameter{
+			Name: paramName,
+		})
+	}
+
+	p.expect(lexer.FUNCTION_ASSOCIATION)
+	fnBody := ast.ExpectStmt[ast.BlockStmt](parseBlockStmt(p)).Body
+
+	return fnParams, fnBody
 }

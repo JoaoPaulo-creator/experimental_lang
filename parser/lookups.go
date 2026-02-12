@@ -9,7 +9,7 @@ type bindingPower int
 
 const (
 	default_bp bindingPower = iota
-	assignment
+	function_association
 	primary
 	unary
 	member
@@ -49,10 +49,8 @@ func stmt(kind lexer.Kind, stmtFn stmtHandler) {
 
 func createTokenLookups() {
 
-	led(lexer.ASSIGNMENT, assignment, parseAssignmentExpr)
-
 	nud(lexer.STRING, parsePrimaryExpr)
 	nud(lexer.IDENTIFIER, parsePrimaryExpr)
 
-	stmt(lexer.LET, parseVarDeclStmt)
+	stmt(lexer.LET, parseFunctionDeclStmt)
 }
