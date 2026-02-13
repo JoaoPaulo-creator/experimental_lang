@@ -9,6 +9,9 @@ const (
 	ILLEGAL
 
 	// keywords
+	PUBLIC
+	MAIN
+	PRINT
 	LET
 	MATCH
 	WITH
@@ -26,6 +29,8 @@ const (
 	CLOSE_BRACKET
 	OPEN_PARENTHESIS
 	CLOSE_PARENTHESIS
+	OPEN_CURLY
+	CLOSE_CURLY
 	PIPE // |
 	COMMA
 	SEMI_COLON
@@ -50,6 +55,9 @@ type Token struct {
 }
 
 var keywords = map[string]Kind{
+	"public": PUBLIC,
+	"main":   MAIN,
+	"print":  PRINT,
 	"let":    LET,
 	"match":  MATCH,
 	"with":   WITH,
@@ -64,7 +72,12 @@ func TokenKindString(kind Kind) string {
 		return "eof"
 	case ILLEGAL:
 		return "illegal"
-
+	case PUBLIC:
+		return "public"
+	case MAIN:
+		return "main"
+	case PRINT:
+		return "print"
 	case LET:
 		return "let"
 	case MATCH:

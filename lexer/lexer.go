@@ -88,6 +88,14 @@ func (lex *lexer) scanToken() {
 		lex.advance()
 		lex.push(newToken(FUNCTION_ASSOCIATION, "="))
 		return
+	case '{':
+		lex.advance()
+		lex.push(newToken(OPEN_CURLY, "{"))
+		return
+	case '}':
+		lex.advance()
+		lex.push(newToken(CLOSE_CURLY, "}"))
+		return
 	case '[':
 		lex.advance()
 		lex.push(newToken(OPEN_BRACKET, "["))
