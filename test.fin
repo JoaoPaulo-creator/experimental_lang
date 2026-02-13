@@ -6,3 +6,7 @@ let env x = x
 
  let product_id p =
      match p
+     | "carro" then "idProdutoCarro"
+     | "moto" then "idProdutoMoto"
+     | "pesados" then "idProdutoPesado"
+     | _ then "idProdutoBens"

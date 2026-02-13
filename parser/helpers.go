@@ -41,3 +41,14 @@ func (p *parser) expectError(expectedKind lexer.Kind, err any) lexer.Token {
 func (p *parser) expect(expectKind lexer.Kind) lexer.Token {
 	return p.expectError(expectKind, nil)
 }
+
+func (p *parser) skipSeparators() {
+	for p.hasTokens() {
+		k := p.currentTokenKind()
+		if k == lexer.NEW_LINE || k == lexer.SEMI_COLON {
+			p.advance()
+			continue
+		}
+		break
+	}
+}

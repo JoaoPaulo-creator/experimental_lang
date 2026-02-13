@@ -4,6 +4,7 @@ import (
 	"experimental/ast"
 	"experimental/lexer"
 	"fmt"
+	"strconv"
 )
 
 func parseExpr(p *parser, bp bindingPower) ast.Expr {
@@ -51,5 +52,50 @@ func parsePrimaryExpr(p *parser) ast.Expr {
 		}
 	default:
 		panic(fmt.Sprintf("Cannot create primary expression from %s\n", lexer.TokenKindString(p.currentTokenKind())))
+	}
+}
+
+func parseNumberExpr(p *parser) ast.Expr {
+	value := p.advance().Literal
+	n, err := strconv.ParseFloat(value, 64)
+	if err != nil {
+		panic(err.Error())
+	}
+
+	return ast.NumberExpr{
+		Value: n,
+	}
+}
+
+func parseWildcardExpr(p *parser) ast.Expr {
+	p.expect(lexer.UNDER_SCORE)
+	return ast.WildcardExpr{}
+}
+
+// parses the match block
+func parseMatchExpr(p *parser) ast.Expr {
+	p.skipSeparators()
+	p.expect(lexer.MATCH)
+	expr := parseExpr(p, default_bp)
+	arms := make([]ast.MatchArm, 0)
+	for p.hasTokens() {
+		p.skipSeparators()
+		if p.currentTokenKind() != lexer.PIPE {
+			break
+		}
+
+		p.advance() // consumes '|'
+		pattern := parseExpr(p, default_bp)
+		p.expect(lexer.THEN)
+		body := parseExpr(p, default_bp)
+		arms = append(arms, ast.MatchArm{
+			Pattern: pattern,
+			Body:    body,
+		})
+	}
+
+	return ast.MatchExpr{
+		Scrutinee: expr,
+		Arms:      arms,
 	}
 }

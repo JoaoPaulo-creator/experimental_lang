@@ -48,3 +48,19 @@ type MemberExpr struct {
 }
 
 func (n MemberExpr) expr() {}
+
+type WildcardExpr struct{}
+
+func (n WildcardExpr) expr() {}
+
+type MatchArm struct {
+	Pattern Expr
+	Body    Expr
+}
+
+type MatchExpr struct {
+	Scrutinee Expr
+	Arms      []MatchArm
+}
+
+func (n MatchExpr) expr() {}

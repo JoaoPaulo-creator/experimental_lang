@@ -11,6 +11,7 @@ const (
 	// keywords
 	LET
 	MATCH
+	WITH
 	THEN
 	MODULE
 	NIL
@@ -51,6 +52,7 @@ type Token struct {
 var keywords = map[string]Kind{
 	"let":    LET,
 	"match":  MATCH,
+	"with":   WITH,
 	"then":   THEN,
 	"nil":    NIL,
 	"module": MODULE,
@@ -67,6 +69,8 @@ func TokenKindString(kind Kind) string {
 		return "let"
 	case MATCH:
 		return "match"
+	case WITH:
+		return "with"
 	case THEN:
 		return "then"
 	case MODULE:

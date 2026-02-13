@@ -32,7 +32,15 @@ func Tokenize(source string) []Token {
 func (lex *lexer) scanToken() {
 	ch := lex.peek()
 
-	// skip whitespaces
+	// newline
+	if ch == '\n' {
+		lex.advance()
+		lex.push(newToken(NEW_LINE, "\n"))
+		lex.line++
+		return
+	}
+
+	// skip whitespaces (excluding newline)
 	if unicode.IsSpace(rune(ch)) {
 		lex.skipWhitespace()
 		return
@@ -186,7 +194,7 @@ func isIdentContinue(ch byte) bool {
 }
 
 func (lex *lexer) skipWhitespace() {
-	for !lex.atEOF() && unicode.IsSpace(rune(lex.peek())) {
+	for !lex.atEOF() && unicode.IsSpace(rune(lex.peek())) && lex.peek() != '\n' {
 		if lex.peek() == '\t' {
 			lex.pos++
 		}

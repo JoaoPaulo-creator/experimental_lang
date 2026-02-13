@@ -57,3 +57,10 @@ type FunctionDeclStmt struct {
 }
 
 func (n FunctionDeclStmt) stmt() {}
+
+type PipeStmt struct {
+	Condition  Expr
+	Consequent Stmt
+}
+
+func (n PipeStmt) stmt() {}

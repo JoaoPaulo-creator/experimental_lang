@@ -10,6 +10,7 @@ type bindingPower int
 const (
 	default_bp bindingPower = iota
 	function_association
+	assignment
 	primary
 	unary
 	member
@@ -51,6 +52,9 @@ func createTokenLookups() {
 
 	nud(lexer.STRING, parsePrimaryExpr)
 	nud(lexer.IDENTIFIER, parsePrimaryExpr)
+	// nud(lexer.NUMBER, parseNumberExpr)
+	nud(lexer.UNDER_SCORE, parseWildcardExpr)
+	nud(lexer.MATCH, parseMatchExpr)
 
 	stmt(lexer.LET, parseFunctionDeclStmt)
 }

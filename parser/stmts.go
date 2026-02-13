@@ -6,6 +6,7 @@ import (
 )
 
 func parseStmt(p *parser) ast.Stmt {
+	p.skipSeparators()
 	stmtFn, exists := stmtLu[p.currentTokenKind()]
 	if exists {
 		return stmtFn(p)
@@ -36,10 +37,14 @@ func parseVarDeclStmt(p *parser) ast.Stmt {
 }
 
 func parseBlockStmt(p *parser) ast.Stmt {
-	p.advance()
 	body := []ast.Stmt{}
+	p.skipSeparators()
 	for p.hasTokens() && p.currentTokenKind() != lexer.NEW_LINE {
 		body = append(body, parseStmt(p))
+		p.skipSeparators()
+	}
+	if p.hasTokens() && p.currentTokenKind() == lexer.NEW_LINE {
+		p.advance()
 	}
 
 	return ast.BlockStmt{
@@ -58,6 +63,19 @@ func parseFunctionDeclStmt(p *parser) ast.Stmt {
 		Parameters: fnParameters,
 		Body:       fnBody,
 	}
+}
+
+func parsePipeStmt(p *parser) ast.Stmt {
+	p.advance()
+	condition := parseExpr(p, assignment)
+	p.expect(lexer.THEN)
+	consequent := parseBlockStmt(p)
+
+	return ast.PipeStmt{
+		Condition:  condition,
+		Consequent: consequent,
+	}
+
 }
 
 func parseFnParamsAndBody(p *parser) ([]ast.Parameter, []ast.Stmt) {

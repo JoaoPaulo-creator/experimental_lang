@@ -23,8 +23,12 @@ func Parse(tokens []lexer.Token) ast.BlockStmt {
 	body := make([]ast.Stmt, 0)
 
 	for p.hasTokens() {
-		body = append(body, parseStmt(p))
+		p.skipSeparators()
+		if !p.hasTokens() {
+			break
+		}
 
+		body = append(body, parseStmt(p))
 	}
 
 	return ast.BlockStmt{
