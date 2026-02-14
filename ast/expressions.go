@@ -24,6 +24,13 @@ type ComputedExpr struct {
 
 func (n ComputedExpr) expr() {}
 
+type CallExpr struct {
+	Method    Expr
+	Arguments []Expr
+}
+
+func (n CallExpr) expr() {}
+
 type NumberExpr struct {
 	Value float64
 }
@@ -64,3 +71,11 @@ type MatchExpr struct {
 }
 
 func (n MatchExpr) expr() {}
+
+type FunctionExpr struct {
+	Parameters []Parameter
+	Body       []Stmt
+	// ReturnType Type
+}
+
+func (n FunctionExpr) expr() {}

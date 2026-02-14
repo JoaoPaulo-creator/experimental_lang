@@ -112,6 +112,10 @@ func (lex *lexer) scanToken() {
 		lex.advance()
 		lex.push(newToken(CLOSE_PARENTHESIS, ")"))
 		return
+	case ':':
+		lex.advance()
+		lex.push(newToken(COLON, ":"))
+		return
 	case ';':
 		lex.advance()
 		lex.push(newToken(SEMI_COLON, ";"))

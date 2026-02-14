@@ -50,10 +50,17 @@ type Parameter struct {
 	Name string
 }
 
+type PublicStmt struct {
+	Visibility string
+}
+
+func (n PublicStmt) stmt() {}
+
 type FunctionDeclStmt struct {
 	Name       string
 	Parameters []Parameter
 	Body       []Stmt
+	Visibility string
 }
 
 func (n FunctionDeclStmt) stmt() {}

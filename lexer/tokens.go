@@ -1,6 +1,9 @@
 package lexer
 
-import "fmt"
+import (
+	"fmt"
+	"slices"
+)
 
 type Kind int
 
@@ -10,7 +13,7 @@ const (
 
 	// keywords
 	PUBLIC
-	MAIN
+	FUN
 	PRINT
 	LET
 	MATCH
@@ -34,6 +37,7 @@ const (
 	PIPE // |
 	COMMA
 	SEMI_COLON
+	COLON
 
 	// operators
 	FUNCTION_ASSOCIATION // =
@@ -56,7 +60,7 @@ type Token struct {
 
 var keywords = map[string]Kind{
 	"public": PUBLIC,
-	"main":   MAIN,
+	"fun":    FUN,
 	"print":  PRINT,
 	"let":    LET,
 	"match":  MATCH,
@@ -74,8 +78,8 @@ func TokenKindString(kind Kind) string {
 		return "illegal"
 	case PUBLIC:
 		return "public"
-	case MAIN:
-		return "main"
+	case FUN:
+		return "fun"
 	case PRINT:
 		return "print"
 	case LET:
@@ -112,7 +116,8 @@ func TokenKindString(kind Kind) string {
 		return "comma"
 	case SEMI_COLON:
 		return "semi_colon"
-
+	case COLON:
+		return "colon"
 	case FUNCTION_ASSOCIATION:
 		return "function_association"
 	case NEW_LINE:
@@ -134,6 +139,10 @@ func TokenKindString(kind Kind) string {
 	default:
 		return fmt.Sprintf("unknown token: %d", kind)
 	}
+}
+
+func (token Token) IsOneOfMany(expectedTokens ...Kind) bool {
+	return slices.Contains(expectedTokens, token.Kind)
 }
 
 func newToken(kind Kind, value string) Token {

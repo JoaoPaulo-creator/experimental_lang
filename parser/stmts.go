@@ -53,7 +53,34 @@ func parseBlockStmt(p *parser) ast.Stmt {
 
 }
 
+func parseBlockStmtV2(p *parser) ast.Stmt {
+	p.expect(lexer.OPEN_CURLY)
+	body := []ast.Stmt{}
+	for p.hasTokens() {
+		p.skipSeparators()
+		if p.currentTokenKind() == lexer.CLOSE_CURLY {
+			break
+		}
+
+		body = append(body, parseStmt(p))
+	}
+
+	p.expect(lexer.CLOSE_CURLY)
+	return ast.BlockStmt{
+		Body: body,
+	}
+}
+
+func parsePublicStmt(p *parser) ast.Stmt {
+	v := p.expect(lexer.PUBLIC).Literal
+
+	return ast.PublicStmt{
+		Visibility: v,
+	}
+}
+
 func parseFunctionDeclStmt(p *parser) ast.Stmt {
+	p.advance()
 	p.advance()
 	fnName := p.expect(lexer.IDENTIFIER).Literal
 	fnParameters, fnBody := parseFnParamsAndBody(p)
@@ -80,15 +107,21 @@ func parsePipeStmt(p *parser) ast.Stmt {
 
 func parseFnParamsAndBody(p *parser) ([]ast.Parameter, []ast.Stmt) {
 	fnParams := make([]ast.Parameter, 0)
-	for p.hasTokens() && p.currentTokenKind() != lexer.FUNCTION_ASSOCIATION {
+	p.expect(lexer.OPEN_PARENTHESIS)
+	for p.hasTokens() && p.currentTokenKind() != lexer.CLOSE_PARENTHESIS {
 		paramName := p.expect(lexer.IDENTIFIER).Literal
+		p.expect(lexer.COLON)
 		fnParams = append(fnParams, ast.Parameter{
 			Name: paramName,
 		})
+
+		if !p.currentToken().IsOneOfMany(lexer.CLOSE_PARENTHESIS, lexer.EOF) {
+			p.expect(lexer.COMMA)
+		}
 	}
 
-	p.expect(lexer.FUNCTION_ASSOCIATION)
-	fnBody := ast.ExpectStmt[ast.BlockStmt](parseBlockStmt(p)).Body
+	p.expect(lexer.CLOSE_PARENTHESIS)
+	fnBody := ast.ExpectStmt[ast.BlockStmt](parseBlockStmtV2(p)).Body
 
 	return fnParams, fnBody
 }

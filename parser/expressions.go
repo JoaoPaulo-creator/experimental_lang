@@ -42,6 +42,11 @@ func parseAssignmentExpr(p *parser, left ast.Expr, bp bindingPower) ast.Expr {
 
 func parsePrimaryExpr(p *parser) ast.Expr {
 	switch p.currentTokenKind() {
+	case lexer.NUMBER:
+		number, _ := strconv.ParseFloat(p.advance().Literal, 64)
+		return ast.NumberExpr{
+			Value: number,
+		}
 	case lexer.STRING:
 		return ast.StringExpr{
 			Value: p.advance().Literal,
@@ -65,6 +70,59 @@ func parseNumberExpr(p *parser) ast.Expr {
 	return ast.NumberExpr{
 		Value: n,
 	}
+}
+
+func parseFunExpr(p *parser) ast.Expr {
+	p.expect(lexer.FUN)
+	funParams, funBody := parseFnParamsAndBody(p)
+	return ast.FunctionExpr{
+		Parameters: funParams,
+		Body:       funBody,
+	}
+}
+
+func parseCallExpr(p *parser, left ast.Expr, bp bindingPower) ast.Expr {
+	p.advance()
+	arguments := make([]ast.Expr, 0)
+
+	for p.hasTokens() && p.currentTokenKind() != lexer.CLOSE_PARENTHESIS {
+		arguments = append(arguments, parseExpr(p, assignment))
+		if !p.currentToken().IsOneOfMany(lexer.EOF, lexer.CLOSE_PARENTHESIS) {
+			p.expect(lexer.COMMA)
+		}
+	}
+
+	p.expect(lexer.CLOSE_PARENTHESIS)
+	return ast.CallExpr{
+		Method:    left,
+		Arguments: arguments,
+	}
+
+}
+
+func parseMemberExpr(p *parser, left ast.Expr, bp bindingPower) ast.Expr {
+	isComputed := p.advance().Kind == lexer.OPEN_BRACKET
+	if isComputed {
+		rhs := parseExpr(p, bp)
+		p.expect(lexer.CLOSE_BRACKET)
+		return ast.ComputedExpr{
+			Member:   left,
+			Property: rhs,
+		}
+	}
+
+	return ast.MemberExpr{
+		Member:   left,
+		Property: p.expect(lexer.IDENTIFIER).Literal,
+	}
+
+}
+
+func parseGroupingExpr(p *parser) ast.Expr {
+	p.advance()
+	expr := parseExpr(p, default_bp)
+	p.expect(lexer.CLOSE_PARENTHESIS)
+	return expr
 }
 
 func parseWildcardExpr(p *parser) ast.Expr {
