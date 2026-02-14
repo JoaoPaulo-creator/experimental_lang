@@ -6,7 +6,6 @@ import (
 )
 
 func parseStmt(p *parser) ast.Stmt {
-	p.skipSeparators()
 	stmtFn, exists := stmtLu[p.currentTokenKind()]
 	if exists {
 		return stmtFn(p)
@@ -80,7 +79,6 @@ func parsePublicStmt(p *parser) ast.Stmt {
 }
 
 func parseFunctionDeclStmt(p *parser) ast.Stmt {
-	p.advance()
 	p.advance()
 	fnName := p.expect(lexer.IDENTIFIER).Literal
 	fnParameters, fnBody := parseFnParamsAndBody(p)
