@@ -5,6 +5,8 @@ import (
 	"experimental/parser"
 	"fmt"
 	"os"
+
+	"github.com/sanity-io/litter"
 )
 
 func main() {
@@ -12,10 +14,14 @@ func main() {
 
 	in := lexer.Tokenize(string(data))
 	fmt.Printf("\n\n")
+
+	litter.Dump(in)
 	parser := parser.NewPEGParser(in)
-	prog, ok := parser.Program()
-	fmt.Println("PEG ok:", ok, "funs:", len(prog.Func))
-	if ok {
-		fmt.Println("Parsed function:", prog.Func[0].Name, "stmts:", len(prog.Func[0].Body))
+	prog, err := parser.ParseProgram()
+
+	if err != nil {
+		panic(err.Error())
 	}
+
+	litter.Dump(prog)
 }
