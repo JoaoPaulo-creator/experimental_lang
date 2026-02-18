@@ -16,7 +16,7 @@ func main() {
 	fmt.Printf("\n\n")
 
 	litter.Dump(in)
-	parser := parser.NewPEGParser(in)
+	parser := parser.NewBTParser(in)
 	prog, err := parser.ParseProgram()
 
 	if err != nil {

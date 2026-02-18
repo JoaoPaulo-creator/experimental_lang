@@ -1,3 +1,11 @@
 fun main() {
     println("olá, mundo");
 }
+
+fun foo() {
+    println("isso é um teste");
+}
+
+fun bar(a) {
+    println(a);
+}

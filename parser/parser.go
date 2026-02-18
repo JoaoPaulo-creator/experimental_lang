@@ -20,36 +20,23 @@ func createParser(tokens []lexer.Token) *parser {
 	}
 }
 
-type PEGParser struct {
+type BTParser struct {
 	tokens      []lexer.Token
 	pos         int
-	memo        map[memoKey]memoVal
 	farthest    int
 	farthestErr error
 }
 
-type memoKey struct {
-	rule string
-	pos  int
-}
-
-type memoVal struct {
-	ok  bool
-	pos int
-	val any
-}
-
-func NewPEGParser(tokens []lexer.Token) *PEGParser {
-	return &PEGParser{
+func NewBTParser(tokens []lexer.Token) *BTParser {
+	return &BTParser{
 		tokens: tokens,
-		memo:   map[memoKey]memoVal{},
 	}
 }
 
-func (p *PEGParser) ParseProgram() (*ast.Program, error) {
+func (p *BTParser) ParseProgram() (*ast.Program, error) {
 	prog, ok := p.program()
 	if ok && p.at(lexer.EOF) {
-		return prog.(*ast.Program), nil
+		return prog, nil
 	}
 
 	if p.farthestErr != nil {
@@ -59,15 +46,15 @@ func (p *PEGParser) ParseProgram() (*ast.Program, error) {
 	return nil, fmt.Errorf("parse error at token %d: %v", p.pos, p.cur())
 }
 
-func (p *PEGParser) cur() lexer.Token {
+func (p *BTParser) cur() lexer.Token {
 	return p.tokens[p.pos]
 }
 
-func (p *PEGParser) at(t lexer.Kind) bool {
+func (p *BTParser) at(t lexer.Kind) bool {
 	return p.cur().Kind == t
 }
 
-func (p *PEGParser) accept(k lexer.Kind) bool {
+func (p *BTParser) accept(k lexer.Kind) bool {
 	if p.at(k) {
 		p.pos++
 		return true
@@ -76,7 +63,7 @@ func (p *PEGParser) accept(k lexer.Kind) bool {
 	return false
 }
 
-func (p *PEGParser) setError(msg string) {
+func (p *BTParser) setError(msg string) {
 	if p.pos >= p.farthest {
 		p.farthest = p.pos
 		p.farthestErr = fmt.Errorf("parse error at token %d (%s): %s",
@@ -84,131 +71,137 @@ func (p *PEGParser) setError(msg string) {
 	}
 }
 
-func (p *PEGParser) skipNewLines() {
+func (p *BTParser) skipNewLines() {
 	for p.at(lexer.NEW_LINE) {
 		p.pos++
 	}
 }
 
-func (p *PEGParser) memoized(rule string, pos int) (memoVal, bool) {
-	v, ok := p.memo[memoKey{rule, pos}]
-	if ok {
-		p.pos = v.pos
-	}
-
-	return v, ok
-}
-
-func (p *PEGParser) memoize(rule string, start int, v memoVal) {
-	p.memo[memoKey{rule, start}] = v
-}
-
-func (p *PEGParser) program() (any, bool) {
+func (p *BTParser) program() (*ast.Program, bool) {
 	start := p.pos
-	if v, ok := p.memoized("Program", start); ok {
-		if v.ok {
-			return v.val.(*ast.Program), true
-		}
-		return nil, false
-	}
-
 	prog := &ast.Program{}
 	p.skipNewLines()
 
-	for p.at(lexer.FUN) {
+	for {
 		if !p.at(lexer.FUN) {
 			break
 		}
 
-		fnAny, ok := p.funcDecl()
+		fn, ok := p.funcDecl()
 		if !ok {
 			p.pos = start
-			p.memoize("Program", start, memoVal{ok: false, pos: start})
 			return nil, false
 		}
 
-		prog.Func = append(prog.Func, fnAny.(*ast.FunctionDeclStmt))
+		prog.Func = append(prog.Func, fn)
 		p.skipNewLines()
 	}
 
-	p.memoize("Program", start, memoVal{ok: true, pos: p.pos, val: prog})
 	return prog, true
 }
 
-func (p *PEGParser) funcDecl() (any, bool) {
+func (p *BTParser) funcDecl() (*ast.FunctionDeclStmt, bool) {
 	start := p.pos
-	if v, ok := p.memoized("FunDecl", start); ok {
-		if v.ok {
-			return v.val.(*ast.FunctionDeclStmt), true
-		}
-		return nil, false
-	}
-
 	if !p.accept(lexer.FUN) {
-		p.memoize("FunDecl", start, memoVal{ok: false, pos: start})
+		p.pos = start
 		return nil, false
 	}
 
-	if !p.accept(lexer.IDENTIFIER) {
+	if !p.at(lexer.IDENTIFIER) {
 		p.setError("expected function name")
 		p.pos = start
-		p.memoize("FunDecl", start, memoVal{ok: false, pos: start})
 		return nil, false
 	}
 
 	name := p.cur().Literal
 	p.pos++
-	if !p.accept(lexer.OPEN_PARENTHESIS) && p.accept(lexer.CLOSE_PARENTHESIS) {
+
+	if !p.accept(lexer.OPEN_PARENTHESIS) {
+		p.setError("expected '(' after function identifier")
 		p.pos = start
-		p.memoize("FunDecl", start, memoVal{ok: false, pos: start})
 		return nil, false
 	}
 
-	bodyAny, ok := p.block()
+	params, ok := p.paramList()
 	if !ok {
 		p.pos = start
-		p.memoize("FunDecl", start, memoVal{ok: false, pos: start})
+		return nil, false
+	}
+
+	if !p.accept(lexer.CLOSE_PARENTHESIS) {
+		p.setError("expected ')'")
+		p.pos = start
+		return nil, false
+	}
+
+	body, ok := p.block()
+	if !ok {
+		p.pos = start
 		return nil, false
 	}
 
 	fn := &ast.FunctionDeclStmt{
 		Name:       name,
-		Parameters: []ast.Parameter{},
-		Body:       bodyAny.([]ast.Stmt),
+		Parameters: params,
+		Body:       body,
+		Visibility: "public",
 	}
 
-	p.memoize("FunDecl", start, memoVal{ok: true, pos: p.pos, val: fn})
 	return fn, true
 }
 
-func (p *PEGParser) printLnStmt() (any, bool) {
+func (p *BTParser) paramList() ([]ast.Parameter, bool) {
 	start := p.pos
-	if v, ok := p.memoized("PrintStmt", start); ok {
-		return v.val, v.ok
+
+	if !p.at(lexer.IDENTIFIER) {
+		return []ast.Parameter{}, true
 	}
 
+	var params []ast.Parameter
+	name := p.cur().Literal
+	p.pos++
+	params = append(params, ast.Parameter{Name: name})
+
+	for p.accept(lexer.COMMA) {
+		if !p.at(lexer.IDENTIFIER) {
+			p.setError("expected paramter name after ','")
+			p.pos = start
+			return nil, false
+		}
+
+		name = p.cur().Literal
+		p.pos++
+		params = append(params, ast.Parameter{Name: name})
+	}
+
+	return params, true
+}
+
+func (p *BTParser) printLnStmt() (ast.Stmt, bool) {
+	start := p.pos
+
 	if !(p.accept(lexer.PRINT) || (p.at(lexer.IDENTIFIER) && p.cur().Literal == "println")) {
-		p.memoize("PrintStmt", start, memoVal{ok: false, pos: start})
+		p.pos = start
 		return nil, false
 	}
+
 	if p.cur().Kind == lexer.IDENTIFIER && p.cur().Literal == "println" {
 		p.pos++
 	}
 
-	if !p.accept(lexer.OPEN_PARENTHESIS) || !p.at(lexer.STRING) {
-		p.setError("expected string literal after print(")
+	if !p.accept(lexer.OPEN_PARENTHESIS) || !(p.at(lexer.STRING) || p.at(lexer.IDENTIFIER)) {
+		p.setError("expected string literal or identifier after print(")
 		p.pos = start
-		p.memoize("PrintStmt", start, memoVal{ok: false, pos: start})
 		return nil, false
 	}
 
 	raw := p.cur().Literal
+	isString := p.at(lexer.STRING)
 	p.pos++
 
 	if !p.accept(lexer.CLOSE_PARENTHESIS) {
 		p.setError("expected ')'")
 		p.pos = start
-		p.memoize("PrintStmt", start, memoVal{ok: false, pos: start})
 		return nil, false
 	}
 
@@ -217,37 +210,23 @@ func (p *PEGParser) printLnStmt() (any, bool) {
 		// ok
 	}
 
-	val := strings.Trim(raw, `"`)
+	val := raw
+	if isString {
+		val = strings.Trim(raw, `"`)
+	}
 	stmt := ast.PrintLnStmt{Value: val}
-	p.memoize("PrintStmt", start, memoVal{ok: true, pos: p.pos, val: stmt})
 	return stmt, true
 }
 
-func (p *PEGParser) stmt() (any, bool) {
-	start := p.pos
-	if v, ok := p.memoized("Stmt", start); ok {
-		return v.val, v.ok
-	}
-
-	// only PrintStmt for now
-	st, ok := p.printLnStmt()
-	if !ok {
-		p.memoize("Stmt", start, memoVal{ok: false, pos: start})
-		return nil, false
-	}
-
-	p.memoize("Stmt", start, memoVal{ok: true, pos: p.pos, val: st})
-	return st, true
+func (p *BTParser) stmt() (ast.Stmt, bool) {
+	return p.printLnStmt()
 }
 
-func (p *PEGParser) block() (any, bool) {
+func (p *BTParser) block() ([]ast.Stmt, bool) {
 	start := p.pos
-	if v, ok := p.memoized("Block", start); ok {
-		return v.val, v.ok
-	}
 
 	if !p.accept(lexer.OPEN_CURLY) {
-		p.memoize("Block", start, memoVal{ok: false, pos: start})
+		p.pos = start
 		return nil, false
 	}
 
@@ -257,20 +236,17 @@ func (p *PEGParser) block() (any, bool) {
 		st, ok := p.stmt()
 		if !ok {
 			p.pos = start
-			p.memoize("Block", start, memoVal{ok: false, pos: start})
 			return nil, false
 		}
-		stmts = append(stmts, st.(ast.Stmt))
+		stmts = append(stmts, st)
 		p.skipNewLines()
 	}
 
 	if !p.accept(lexer.CLOSE_CURLY) {
 		p.setError("expected '}'")
 		p.pos = start
-		p.memoize("Block", start, memoVal{ok: false, pos: start})
 		return nil, false
 	}
 
-	p.memoize("Block", start, memoVal{ok: true, pos: p.pos, val: stmts})
 	return stmts, true
 }
