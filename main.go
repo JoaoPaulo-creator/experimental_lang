@@ -5,16 +5,17 @@ import (
 	"experimental/parser"
 	"fmt"
 	"os"
-
-	"github.com/sanity-io/litter"
 )
 
 func main() {
 	data, _ := os.ReadFile("./test.fin")
 
 	in := lexer.Tokenize(string(data))
-	litter.Dump(in)
 	fmt.Printf("\n\n")
-	parser := parser.Parse(in)
-	litter.Dump(parser)
+	parser := parser.NewPEGParser(in)
+	prog, ok := parser.Program()
+	fmt.Println("PEG ok:", ok, "funs:", len(prog.Func))
+	if ok {
+		fmt.Println("Parsed function:", prog.Func[0].Name, "stmts:", len(prog.Func[0].Body))
+	}
 }

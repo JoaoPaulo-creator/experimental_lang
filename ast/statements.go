@@ -71,3 +71,13 @@ type PipeStmt struct {
 }
 
 func (n PipeStmt) stmt() {}
+
+type PrintLnStmt struct {
+	Value string
+}
+
+func (node PrintLnStmt) stmt() {}
+
+type Program struct {
+	Func []*FunctionDeclStmt
+}
