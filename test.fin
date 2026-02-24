@@ -3,7 +3,6 @@ fun main() {
 }
 
 fun foo() {
-    println("isso é um teste");
 }
 
 fun bar(a) {
