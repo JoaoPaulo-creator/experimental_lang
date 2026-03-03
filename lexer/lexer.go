@@ -5,7 +5,7 @@ import (
 	"unicode"
 )
 
-type lexer struct {
+type Lexer struct {
 	source string
 	pos    int
 	line   int
@@ -13,7 +13,7 @@ type lexer struct {
 }
 
 func Tokenize(source string) []Token {
-	lex := &lexer{
+	lex := &Lexer{
 		source: source,
 		pos:    0,
 		line:   1,
@@ -29,7 +29,7 @@ func Tokenize(source string) []Token {
 	return lex.Tokens
 }
 
-func (lex *lexer) scanToken() {
+func (lex *Lexer) scanToken() {
 	ch := lex.peek()
 
 	// newline
@@ -133,7 +133,7 @@ func (lex *lexer) scanToken() {
 	panic(fmt.Sprintf("lexer error: unexpected character '%c' at position %d (line %d)", ch, lex.pos, lex.line))
 }
 
-func (lex *lexer) scanString() {
+func (lex *Lexer) scanString() {
 	start := lex.pos
 	lex.advance() // consume opening "
 
@@ -150,7 +150,7 @@ func (lex *lexer) scanString() {
 	lex.push(newToken(STRING, value))
 }
 
-func (lex *lexer) scanNumber() {
+func (lex *Lexer) scanNumber() {
 	start := lex.pos
 	lex.advance()
 
@@ -169,7 +169,7 @@ func (lex *lexer) scanNumber() {
 	lex.push(newToken(NUMBER, value))
 }
 
-func (lex *lexer) scanIdentifier() {
+func (lex *Lexer) scanIdentifier() {
 	start := lex.pos
 	lex.advance()
 
@@ -193,7 +193,7 @@ func isIdentContinue(ch byte) bool {
 	return unicode.IsLetter(rune(ch)) || unicode.IsDigit(rune(ch)) || ch == '_'
 }
 
-func (lex *lexer) skipWhitespace() {
+func (lex *Lexer) skipWhitespace() {
 	for !lex.atEOF() && unicode.IsSpace(rune(lex.peek())) && lex.peek() != '\n' {
 		if lex.peek() == '\t' {
 			lex.pos++
@@ -202,7 +202,7 @@ func (lex *lexer) skipWhitespace() {
 	}
 }
 
-func (lex *lexer) skipComment() {
+func (lex *Lexer) skipComment() {
 	for !lex.atEOF() && lex.peek() != '\n' {
 		lex.advance()
 	}
@@ -213,7 +213,7 @@ func (lex *lexer) skipComment() {
 	}
 }
 
-func (lex *lexer) peek() byte {
+func (lex *Lexer) peek() byte {
 	if lex.atEOF() {
 		return 0
 	}
@@ -221,7 +221,7 @@ func (lex *lexer) peek() byte {
 	return lex.source[lex.pos]
 }
 
-func (lex *lexer) peekNext() byte {
+func (lex *Lexer) peekNext() byte {
 	if lex.pos+1 >= len(lex.source) {
 		return 0
 	}
@@ -229,7 +229,7 @@ func (lex *lexer) peekNext() byte {
 	return lex.source[lex.pos+1]
 }
 
-func (lex *lexer) peekAhead(n int) byte {
+func (lex *Lexer) peekAhead(n int) byte {
 	if lex.pos+n >= len(lex.source) {
 		return 0
 	}
@@ -237,14 +237,14 @@ func (lex *lexer) peekAhead(n int) byte {
 	return lex.source[lex.pos+n]
 }
 
-func (lex *lexer) advance() {
+func (lex *Lexer) advance() {
 	lex.pos++
 }
 
-func (lex *lexer) push(token Token) {
+func (lex *Lexer) push(token Token) {
 	lex.Tokens = append(lex.Tokens, token)
 }
 
-func (lex *lexer) atEOF() bool {
+func (lex *Lexer) atEOF() bool {
 	return lex.pos >= len(lex.source)
 }

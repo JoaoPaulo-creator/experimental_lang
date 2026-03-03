@@ -53,14 +53,44 @@ type WildcardExpr struct{}
 
 func (n WildcardExpr) expr() {}
 
+// ── declarations ─────────────────────────────────────────────────
+
+type Program struct {
+	Decls []LetDecl
+}
+
+type LetDecl struct {
+	Name   string
+	Params []string
+	Body   Expr
+}
+
+// ── expressions ──────────────────────────────────────────────────
+
+type MatchExpr struct {
+	Subject Expr
+	Arms    []MatchArm
+}
+
 type MatchArm struct {
-	Pattern Expr
+	Pattern Expr // StrLit | Ident | Wildcard
 	Body    Expr
 }
 
-type MatchExpr struct {
-	Scrutinee Expr
-	Arms      []MatchArm
+type BinOp struct {
+	Op    string
+	Left  Expr
+	Right Expr
 }
 
-func (n MatchExpr) expr() {}
+type Ident struct{ Name string }
+type StrLit struct{ Value string }
+type NumLit struct{ Value string }
+type Wildcard struct{}
+
+func (Ident) expr()     {}
+func (StrLit) expr()    {}
+func (NumLit) expr()    {}
+func (Wildcard) expr()  {}
+func (BinOp) expr()     {}
+func (MatchExpr) expr() {}
